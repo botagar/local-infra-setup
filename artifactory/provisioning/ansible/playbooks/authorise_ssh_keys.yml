@@ -1,0 +1,16 @@
+---
+- name: Register host machine ssh keys with vm
+  hosts: all
+  remote_user: vagrant
+
+  tasks:
+    - name: Authorise host ssh public keys with vm
+      become: yes
+      become_user: root
+      authorized_key:
+        user: jgeddes
+        state: present
+        key: "{{ item }}"
+      with_file:
+        - '../../pub_keys/win10.pub'
+        - '../../pub_keys/wsl.pub'

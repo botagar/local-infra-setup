@@ -1,0 +1,41 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/xenial64"
+
+  config.vm.hostname = "artifactory-ce"
+  config.vm.box_check_update = true
+
+  config.vm.network "private_network", ip: "10.10.0.5", net_mask: "255.255.0.0", name: "VirtualBox Host-Only Ethernet Adapter"
+
+  # config.vm.network "public_network"
+
+  # config.vm.synced_folder "../data", "/vagrant_data"
+
+	config.vm.provider "virtualbox" do |vb|
+		vb.cpus = 2
+		vb.name = "Artifactory Server"
+		vb.memory = "4096"
+		vb.customize ["modifyvm", :id, "--uartmode1", "disconnected"] 
+		vb.customize ["modifyvm", :id, "--clipboard", "bidirectional"]
+		vb.customize ["modifyvm", :id, "--draganddrop", "bidirectional"] 
+		vb.customize ["modifyvm", :id, "--vrde", "on"] 
+		vb.customize ["storageattach", :id, "--storagectl", "IDE", "--port", "0", "--device", "1", "--type", "dvddrive", "--medium", "emptydrive"]
+	end
+
+
+	config.vm.provision "UpdateRepo", type: "shell", :inline => "apt-get update"
+	config.vm.provision "SetupUsers", type: "shell", path: "provisioning/scripts/setup_users.sh"
+	config.vm.provision "InstallCommandLineTools", type: "shell", path: "provisioning/scripts/install_linux_utils.sh"
+	config.vm.provision "InstallVirtualBoxUtils", type: "shell", path: "provisioning/scripts/install_vb_utils.sh"
+	config.vm.provision "InstallArtifactory", type: "shell", path: "provisioning/scripts/download_and_install_artifactory.sh"
+
+	config.vm.provision "Cleanup", type: "shell", :inline => "apt-get autoremove -y"
+
+	config.vm.provision "SshKeys", type: :ansible do |ansible|
+		ansible.verbose = ""
+		ansible.playbook = "provisioning/ansible/playbooks/authorise_ssh_keys.yml"
+	end
+	
+end
